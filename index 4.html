@@ -1,0 +1,76 @@
+
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Previsioni Termiche – 9 Decolli</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: system-ui; margin: 16px }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px }
+    select,button { padding:8px 10px }
+    .meta { margin-top:8px; font-size:14px; color:#334155 }
+  </style>
+</head>
+<body>
+  <h1>Previsioni Termiche – Decolli</h1>
+  <div class="row">
+    <label>Decollo:</label><select id="site"></select>
+    <label>Giorno:</label><select id="day"><option>Oggi</option><option>Domani</option></select>
+    <label>Profilo pilota:</label><select id="profile">
+      <option value="1.0">Principiante ≥1.0</option>
+      <option value="1.5" selected>Intermedio ≥1.5</option>
+      <option value="2.0">Esperto ≥2.0</option>
+    </select>
+    <button id="savePng">Scarica PNG</button>
+  </div>
+  <canvas id="chart" width="980" height="520"></canvas>
+  <div id="meta" class="meta"></div>
+  <script>
+    const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+    let DATA = {"Costa di Soglio": {"meta": {"map": "https://maps.app.goo.gl/GypeX1Y2oJL4J2KM9", "lat": 44.395528, "lon": 9.327944, "profile": "inland_mid", "window": ["12:30", "15:00"]}, "Oggi": {"wstar": [0.0, 0.02, 0.16, 0.42, 1.01, 1.78, 2.45, 2.59, 2.42, 1.68, 0.94], "cloudbase": [1650, 1665, 1710, 1785, 1942, 2145, 2322, 2367, 2335, 2160, 1985], "bltop": [2170, 2187, 2249, 2355, 2583, 2878, 3136, 3197, 3145, 2881, 2617]}, "Domani": {"wstar": [0.0, 0.02, 0.13, 0.41, 0.89, 1.52, 2.11, 2.48, 2.16, 1.58, 0.89], "cloudbase": [1650, 1665, 1702, 1782, 1912, 2080, 2237, 2340, 2270, 2135, 1972], "bltop": [2170, 2187, 2237, 2351, 2538, 2782, 3010, 3157, 3049, 2844, 2598]}}, "Paggi": {"meta": {"map": "https://maps.app.goo.gl/cR4rpFc4zTH1u7aS9", "lat": 44.334806, "lon": 9.365361, "profile": "valley_low", "window": ["13:00", "16:00"]}, "Oggi": {"wstar": [0.0, 0.02, 0.14, 0.4, 0.84, 1.38, 1.93, 2.2, 2.16, 1.43, 0.82], "cloudbase": [1400, 1415, 1455, 1530, 1650, 1795, 1942, 2020, 2020, 1847, 1705], "bltop": [1820, 1837, 1891, 1998, 2170, 2380, 2593, 2704, 2699, 2438, 2223]}, "Domani": {"wstar": [0.0, 0.02, 0.12, 0.33, 0.71, 1.33, 1.92, 1.98, 1.79, 1.3, 0.7], "cloudbase": [1400, 1415, 1450, 1512, 1617, 1782, 1940, 1965, 1927, 1815, 1675], "bltop": [1820, 1837, 1884, 1971, 2122, 2361, 2590, 2622, 2561, 2391, 2179]}}, "Monte San Giacomo": {"meta": {"map": "https://maps.app.goo.gl/aBNGqNfuLoBAge7b6", "lat": 44.357472, "lon": 9.356472, "profile": "inland_high", "window": ["12:30", "15:30"]}, "Oggi": {"wstar": [0.01, 0.02, 0.18, 0.49, 1.13, 1.83, 2.7, 3.1, 2.85, 1.91, 1.17], "cloudbase": [1802, 1815, 1865, 1952, 2122, 2307, 2535, 2645, 2592, 2367, 2192], "bltop": [2403, 2417, 2486, 2610, 2857, 3126, 3459, 3617, 3534, 3196, 2932]}, "Domani": {"wstar": [0.0, 0.02, 0.16, 0.46, 0.97, 1.7, 2.34, 2.76, 2.57, 1.73, 0.98], "cloudbase": [1800, 1815, 1860, 1945, 2082, 2275, 2445, 2560, 2522, 2322, 2145], "bltop": [2400, 2417, 2479, 2600, 2798, 3079, 3325, 3491, 3430, 3129, 2862]}}, "Villa Ginestra": {"meta": {"map": "https://maps.app.goo.gl/FQ7s7y4dejTmqiza6", "lat": 44.275833, "lon": 9.395833, "profile": "coastal_hill", "window": ["12:00", "14:00"]}, "Oggi": {"wstar": [0.02, 0.05, 0.35, 0.79, 1.38, 2.09, 2.31, 2.08, 1.26, 0.78, 0.34], "cloudbase": [1255, 1272, 1357, 1477, 1635, 1822, 1887, 1840, 1645, 1535, 1435], "bltop": [1617, 1638, 1759, 1931, 2160, 2432, 2524, 2449, 2156, 1988, 1835]}, "Domani": {"wstar": [0.01, 0.05, 0.31, 0.69, 1.19, 1.97, 2.16, 1.83, 1.2, 0.71, 0.31], "cloudbase": [1252, 1272, 1347, 1452, 1587, 1792, 1850, 1777, 1630, 1517, 1427], "bltop": [1613, 1638, 1744, 1894, 2089, 2388, 2469, 2356, 2134, 1962, 1824]}}, "Punta Baffe": {"meta": {"map": "https://maps.app.goo.gl/hkF59ibP88zUmWGH7", "lat": 44.254444, "lon": 9.448611, "profile": "coastal_cliff", "window": ["11:30", "13:30"]}, "Oggi": {"wstar": [0.01, 0.05, 0.31, 0.68, 1.19, 1.88, 2.15, 1.91, 1.21, 0.66, 0.31], "cloudbase": [1152, 1172, 1247, 1350, 1487, 1670, 1747, 1697, 1532, 1405, 1327], "bltop": [1473, 1498, 1604, 1751, 1949, 2215, 2325, 2246, 1997, 1804, 1684]}, "Domani": {"wstar": [0.01, 0.04, 0.26, 0.58, 1.09, 1.62, 1.82, 1.63, 1.08, 0.65, 0.28], "cloudbase": [1152, 1170, 1235, 1325, 1462, 1605, 1665, 1627, 1500, 1402, 1320], "bltop": [1473, 1494, 1586, 1714, 1912, 2119, 2203, 2142, 1949, 1800, 1673]}}, "Monte San Nicolao": {"meta": {"map": "https://maps.app.goo.gl/54fvEe67ymztu5Qw8", "lat": 44.225556, "lon": 9.573889, "profile": "ridge_high", "window": ["12:00", "14:30"]}, "Oggi": {"wstar": [0.01, 0.02, 0.18, 0.5, 1.15, 2.06, 2.83, 3.23, 2.96, 2.17, 1.12], "cloudbase": [1902, 1915, 1965, 2055, 2227, 2465, 2667, 2777, 2720, 2532, 2280], "bltop": [2553, 2567, 2636, 2765, 3015, 3362, 3656, 3814, 3725, 3442, 3064]}, "Domani": {"wstar": [0.0, 0.02, 0.17, 0.46, 1.02, 1.84, 2.48, 3.04, 2.76, 1.85, 1.1], "cloudbase": [1900, 1915, 1962, 2045, 2195, 2410, 2580, 2730, 2670, 2452, 2275], "bltop": [2550, 2567, 2632, 2750, 2967, 3280, 3527, 3744, 3651, 3324, 3057]}}, "Bonassola": {"meta": {"map": "https://maps.app.goo.gl/RRrnAB4vxMbaLxup7", "lat": 44.181944, "lon": 9.583611, "profile": "coastal_low", "window": ["11:30", "13:00"]}, "Oggi": {"wstar": [0.01, 0.04, 0.25, 0.61, 1.05, 1.69, 1.9, 1.56, 1.04, 0.55, 0.26], "cloudbase": [1052, 1070, 1132, 1232, 1352, 1522, 1585, 1510, 1390, 1277, 1215], "bltop": [1303, 1324, 1412, 1555, 1728, 1974, 2063, 1947, 1764, 1593, 1496]}, "Domani": {"wstar": [0.01, 0.04, 0.23, 0.49, 0.88, 1.39, 1.53, 1.53, 0.96, 0.52, 0.24], "cloudbase": [1052, 1070, 1127, 1202, 1310, 1447, 1492, 1502, 1370, 1270, 1210], "bltop": [1303, 1324, 1404, 1510, 1665, 1863, 1925, 1935, 1735, 1582, 1488]}}, "Monterosso": {"meta": {"map": "https://maps.app.goo.gl/eNMN8M72A5QSPJj97", "lat": 44.147778, "lon": 9.654167, "profile": "coastal_low", "window": ["11:30", "13:00"]}, "Oggi": {"wstar": [0.01, 0.04, 0.26, 0.59, 1.02, 1.55, 1.76, 1.62, 1.03, 0.56, 0.26], "cloudbase": [1052, 1070, 1135, 1227, 1345, 1487, 1550, 1525, 1387, 1280, 1215], "bltop": [1303, 1324, 1416, 1547, 1717, 1923, 2011, 1969, 1760, 1597, 1496]}, "Domani": {"wstar": [0.01, 0.04, 0.24, 0.49, 0.91, 1.37, 1.53, 1.4, 0.91, 0.54, 0.24], "cloudbase": [1052, 1070, 1130, 1202, 1317, 1442, 1492, 1470, 1357, 1275, 1210], "bltop": [1303, 1324, 1408, 1510, 1676, 1856, 1925, 1888, 1716, 1589, 1488]}}, "Casoni di Suvero": {"meta": {"map": "https://maps.app.goo.gl/jXdACH8n8KSUbRz7A", "lat": 44.298333, "lon": 9.785833, "profile": "ridge_high", "window": ["12:00", "14:30"]}, "Oggi": {"wstar": [0.01, 0.02, 0.18, 0.51, 1.09, 1.96, 2.72, 3.34, 2.9, 2.05, 1.17], "cloudbase": [1902, 1915, 1965, 2057, 2212, 2440, 2640, 2805, 2705, 2502, 2292], "bltop": [2553, 2567, 2636, 2768, 2992, 3325, 3616, 3855, 3703, 3398, 3082]}, "Domani": {"wstar": [0.0, 0.02, 0.17, 0.47, 0.99, 1.84, 2.63, 3.1, 2.68, 1.76, 1.1], "cloudbase": [1900, 1915, 1962, 2047, 2187, 2410, 2617, 2745, 2650, 2430, 2275], "bltop": [2550, 2567, 2632, 2753, 2955, 3280, 3582, 3767, 3621, 3291, 3057]}}};
+
+    const siteSel=document.getElementById('site'), daySel=document.getElementById('day'), profileSel=document.getElementById('profile');
+    const ctx=document.getElementById('chart'); const metaDiv=document.getElementById('meta');
+
+    for(const s of Object.keys(DATA)){ const o=document.createElement('option'); o.value=o.textContent=s; siteSel.appendChild(o); }
+
+    let chart;
+    function render(){
+      const site = siteSel.value || Object.keys(DATA)[0];
+      const day  = daySel.value  || 'Oggi';
+      const thr  = parseFloat(profileSel.value);
+      const d    = DATA[site][day];
+      const good = d.wstar.map(v => v >= thr ? 1 : 0);
+
+      const data = {
+        labels: HOURS,
+        datasets: [
+          {type:'line',label:'Termiche (m/s)',data:d.wstar,yAxisID:'y',borderColor:'#f59e0b',tension:0.35,pointRadius:3},
+          {type:'line',label:'Base cumuli (m)',data:d.cloudbase,yAxisID:'y1',borderColor:'#3b82f6',tension:0.35,pointRadius:3},
+          {type:'line',label:'BL-top (m)',data:d.bltop,yAxisID:'y1',borderColor:'#10b981',tension:0.35,pointRadius:3},
+          {type:'bar', label:'Finestra ≥ soglia',data:good,yAxisID:'y2',backgroundColor:'rgba(245,158,11,.25)'}
+        ]
+      };
+      const options = {
+        responsive:true,
+        plugins:{ legend:{display:false}, title:{display:true,text:`${site} – ${day} (soglia ≥ ${thr} m/s)`} },
+        scales:{ y:{title:{display:true,text:'m/s'}}, y1:{position:'right',title:{display:true,text:'Quota (m)'}}, y2:{display:false,min:0,max:1} }
+      };
+      if(chart) chart.destroy();
+      chart = new Chart(ctx,{type:'line',data,options});
+
+      const m = DATA[site].meta;
+      const w = m.window;
+      metaDiv.innerHTML = `<b>${site}</b> · <a href="${m.map}" target="_blank" rel="noopener">Maps</a> · Lat: ${m.lat.toFixed(6)} Lon: ${m.lon.toFixed(6)} · <span style="background:#eef2ff;padding:3px 8px;border-radius:999px">Finestra consigliata: ${w[0]}–${w[1]}</span>`;
+    }
+
+    siteSel.addEventListener('change',render);
+    daySel.addEventListener('change',render);
+    profileSel.addEventListener('change',render);
+    document.getElementById('savePng').addEventListener('click',()=>{ const a=document.createElement('a'); a.href=chart.toBase64Image('image/png',1); a.download=`${siteSel.value}-${daySel.value}.png`; a.click(); });
+    render();
+  </script>
+</body>
+</html>
